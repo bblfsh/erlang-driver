@@ -17,7 +17,12 @@ RUN mkdir -p /opt/driver/src && \
 
 # As minimal build tools you need: make, curl and git, install using the same
 # command the specific tools required to build the driver.
-RUN apk add --no-cache make git curl ca-certificates
+RUN apk add --no-cache make git curl erlang erlang-asn1 erlang-crypto erlang-dev erlang-dialyzer erlang-eunit erlang-inets erlang-public-key erlang-sasl erlang-ssl erlang-syntax-tools erlang-tools gcc g++ git make && \
+    git clone https://github.com/erlang/rebar3.git &&\
+    cd rebar3 && \
+    ./bootstrap
+
+
 
 
 # The volume with the full source code is mounted at `/opt/driver/src` so, we
