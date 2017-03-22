@@ -1,7 +1,7 @@
+.sdk
+build
 .rebar3
-_*
 .eunit
-*.o
 *.beam
 *.plt
 *.swp
@@ -15,5 +15,3 @@ logs
 _build
 .idea
 rebar3.crashdump
-.sdk
-build
