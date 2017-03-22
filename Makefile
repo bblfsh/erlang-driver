@@ -5,11 +5,11 @@ $(if $(filter true,$(sdkloaded)),,$(error You must install bblfsh-sdk))
 DIR="_build/default/rel"
 RELEASE="pre-alpha"
 
-test-native:
+test-native-internal:
 	cd native; \
 	rebar3 eunit
 
-build-native:
+build-native-internal:
 
 	cd native; \
 	rebar3 release
