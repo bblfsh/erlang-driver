@@ -6,8 +6,7 @@
   {applications,
    [kernel,
     stdlib,
-    jiffy,
-    forms
+    jiffy
    ]},
   {env,[]},
   {modules, []},

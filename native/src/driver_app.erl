@@ -8,14 +8,15 @@
 -behaviour(application).
 
 %% Application callbacks
--export([start/2, stop/1,read_input/0,tokenize/1,parse/1]).
+-export([start/2, stop/1]).
 
 %%====================================================================
 %% API
 %%====================================================================
 
 start(_StartType, _StartArgs) ->
-    read_input(),
+    io:fwrite("Hello world!~n", []),
+    %read_input(),
 
 
 
@@ -27,7 +28,6 @@ stop(_State) ->
 %%====================================================================
 %% Internal functions
 %%====================================================================
-
 
 %% Read input as a string
 read_input() ->
@@ -61,7 +61,7 @@ parse(ExprList) ->
         lists:append(ParseList,[ListAST])
     end,[],ExprList).
 
-parseExpr(true,Tokens) -> io:fwrite("Estoy arriba"),
+parseExpr(true,Tokens) ->
   erl_parse:parse_form(Tokens);
 parseExpr(false,Tokens) ->
   erl_parse:parse_exprs(Tokens).
