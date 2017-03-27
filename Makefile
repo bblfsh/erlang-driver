@@ -11,11 +11,13 @@ test-native-internal:
 
 build-native-internal:
 
+
 	cd native; \
-	rebar3 release
-	awk '{gsub("-noinput","");print}' native/$(DIR)/$(RELEASE)/bin/$(RELEASE) > native/$(DIR)/$(RELEASE)/bin/tmp
-	cat native/$(DIR)/$(RELEASE)/bin/tmp > native/$(DIR)/$(RELEASE)/bin/$(RELEASE)
-	rm native/$(DIR)/$(RELEASE)/bin/tmp
-	cp -r native/_build $(BUILD_PATH); \
-	cp native/native.sh $(BUILD_PATH)/native; \
-	chmod +x $(BUILD_PATH)/native
+  rebar3 release; \
+	awk '{gsub("-noinput","");print}' $(DIR)/$(RELEASE)/bin/$(RELEASE) > $(DIR)/$(RELEASE)/bin/tmp;\
+	cat $(DIR)/$(RELEASE)/bin/tmp > $(DIR)/$(RELEASE)/bin/$(RELEASE); \
+  rm $(DIR)/$(RELEASE)/bin/tmp; \
+	cp -r _build $(BUILD_PATH); \
+  cp native.sh $(BUILD_PATH)/native; \
+	chmod +x $(BUILD_PATH)/native;
+	rm  -r .cache 
