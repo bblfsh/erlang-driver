@@ -3,4 +3,4 @@
 DIR="_build/default/rel";
 RELEASE="pre-alpha";
 
-$DIR/$RELEASE/bin/$RELEASE foreground
+/opt/driver/bin/$DIR/$RELEASE/bin/$RELEASE foreground
