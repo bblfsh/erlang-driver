@@ -8,7 +8,7 @@
 -behaviour(application).
 
 %% Application callbacks
--export([start/2, stop/1]).
+-export([start/2, stop/1,read_input/0]).
 
 %%====================================================================
 %% API
@@ -36,7 +36,7 @@ read_input() ->
         N ->
             % display the list
             SubS = string:substr(N,1,string:len(N)-1),
-            {Data}= jsx:decode(SubS),
+            Data= jsx:decode(list_to_binary(SubS)),
             Content = proplists:get_value(<<"content">>,Data),
             ExprList = tokenize(Content),
             ParseList = parse(ExprList),
