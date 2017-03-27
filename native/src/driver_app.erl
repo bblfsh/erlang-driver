@@ -15,8 +15,7 @@
 %%====================================================================
 
 start(_StartType, _StartArgs) ->
-    io:fwrite("Hello world!~n", []),
-    %read_input(),
+    read_input(),
 
 
 
@@ -37,7 +36,7 @@ read_input() ->
         N ->
             % display the list
             SubS = string:substr(N,1,string:len(N)-1),
-            {Data}= jiffy:decode(SubS),
+            {Data}= jsx:decode(SubS),
             Content = proplists:get_value(<<"content">>,Data),
             ExprList = tokenize(Content),
             ParseList = parse(ExprList),
