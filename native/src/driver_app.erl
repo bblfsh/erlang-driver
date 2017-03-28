@@ -55,9 +55,9 @@ parse(ExprList) ->
     lists:foldl(fun (Expr,ParseList)->
         ExprDot = string:concat(Expr,"."),
         {ok, Tokens, _} = erl_scan:string(ExprDot),
-        IsForm = element(1,hd(Tokens))=='-',
+        IsForm = (element(1,hd(Tokens))=='-') and not is_number(element(2,hd(Tokens))),
         {ok, ListAST} = parseExpr(IsForm,Tokens),
-        lists:append(ParseList,[ListAST])
+        lists:append(ParseList,ListAST)
     end,[],ExprList).
 
 parseExpr(true,Tokens) ->
