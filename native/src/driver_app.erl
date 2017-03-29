@@ -14,11 +14,6 @@ start(_StartType, _StartArgs) ->
 stop(_State) ->
     ok.
 
-%%====================================================================
-%% Internal functions
-%%====================================================================
-
-%% Read input as a string
 read_input() ->
     case io:get_line("Reading>") of
         eof ->
@@ -38,16 +33,24 @@ tokenize(Content) ->
     string:tokens(Formated,".").
 
 parse(ExprList) ->
-
     lists:foldl(fun (Expr,ParseList)->
         ExprDot = string:concat(Expr,"."),
         {ok, Tokens, _} = erl_scan:string(ExprDot),
-        IsForm = (element(1,hd(Tokens))=='-') and not is_number(element(2,hd(Tokens))),
-        {ok, ListAST} = parseExpr(IsForm,Tokens),
-        lists:append(ParseList,ListAST)
+        AST = parseExpr(Tokens),
+        lists:append(ParseList,AST)
     end,[],ExprList).
 
-parseExpr(true,Tokens) ->
-  erl_parse:parse_form(Tokens);
-parseExpr(false,Tokens) ->
-  erl_parse:parse_exprs(Tokens).
+
+parseExpr(Tokens) ->
+    {ok, AbsForm} =
+        try
+            {ok, _} = erl_parse:parse_form(Tokens)
+        catch
+            _:_ ->
+                {ok, _} = erl_parse:parse_exprs(Tokens)
+        end,
+    Result = if
+      is_list(AbsForm) -> AbsForm;
+      true -> [AbsForm]
+    end,
+    Result.
