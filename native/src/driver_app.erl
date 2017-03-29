@@ -1,8 +1,3 @@
-%%%-------------------------------------------------------------------
-%% @doc driver public API
-%% @end
-%%%-------------------------------------------------------------------
-
 -module(driver_app).
 
 -behaviour(application).
@@ -10,17 +5,12 @@
 %% Application callbacks
 -export([start/2, stop/1,read_input/0]).
 
-%%====================================================================
-%% API
-%%====================================================================
+
 
 start(_StartType, _StartArgs) ->
     read_input(),
-
-
-
     driver_sup:start_link().
-%%--------------------------------------------------------------------
+
 stop(_State) ->
     ok.
 
@@ -34,7 +24,6 @@ read_input() ->
         eof ->
             ok;
         N ->
-            % display the list
             SubS = string:substr(N,1,string:len(N)-1),
             Data= jsx:decode(list_to_binary(SubS)),
             Content = proplists:get_value(<<"content">>,Data),
@@ -44,11 +33,9 @@ read_input() ->
             read_input()
     end.
 
-
 tokenize(Content) ->
     Formated= string:join(lists:map(fun erlang:binary_to_list/1,[Content]),""),
     string:tokens(Formated,".").
-
 
 parse(ExprList) ->
 
