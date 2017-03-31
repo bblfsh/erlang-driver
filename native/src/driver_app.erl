@@ -3,7 +3,7 @@
 -behaviour(application).
 
 %% Application callbacks
--export([start/2, stop/1,read_input/0]).
+-export([start/2, stop/1,read_input/0,tup2list/1]).
 
 
 
@@ -54,3 +54,19 @@ parseExpr(Tokens) ->
       true -> [AbsForm]
     end,
     Result.
+
+tup2list(T) when is_list(T)->
+    tup2list(list_to_tuple(T));
+tup2list(T) ->
+    tup2list(T, tuple_size(T), []).
+
+
+tup2list(T, 0, Acc) ->
+    Acc;
+tup2list(T, N, Acc) when is_tuple(element(N,T)) ->
+    tup2list(T, N-1, [tup2list(element(N,T),tuple_size(element(N,T)),[])|Acc]);
+tup2list(T,N,Acc) when is_list(element(N,T)) ->
+    Tuple = list_to_tuple(element(N,T)),
+    tup2list(T, N-1, [tup2list(Tuple,tuple_size(Tuple),[])|Acc]);
+tup2list(T,N,Acc)->
+    tup2list(T,N-1,[element(N,T)|Acc]).
