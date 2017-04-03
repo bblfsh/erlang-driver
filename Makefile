@@ -11,7 +11,7 @@ test-native-internal:
 
 build-native-internal:
 
-  if [ -d "build" ]; then rm -r build; fi;
+	if [ -d "build" ]; then rm -r build; fi;
 	cd native; \
 	if [ -d "_build"]; then rm -r _build; fi;\
   rebar3 release; \
