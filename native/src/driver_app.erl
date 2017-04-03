@@ -3,30 +3,35 @@
 -behaviour(application).
 
 %% Application callbacks
--export([start/2, stop/1,read_input/0,tup2list/1]).
+-export([start/2, stop/1,process/0]).
 
 
 
 start(_StartType, _StartArgs) ->
-    read_input(),
+    process(),
     driver_sup:start_link().
 
 stop(_State) ->
     ok.
 
-read_input() ->
+process() ->
     case io:get_line("Reading>") of
         eof ->
             ok;
         N ->
-            SubS = string:substr(N,1,string:len(N)-1),
-            Data= jsx:decode(list_to_binary(SubS)),
-            Content = proplists:get_value(<<"content">>,Data),
+            Content = decode(N),
             ExprList = tokenize(Content),
             ParseList = parse(ExprList),
-            io:format("~p\n",[ParseList]),
-            read_input()
+            FormatParse = format(ParseList),
+            JSON = jsx:encode([{<<"AST">>,FormatParse}]),
+            io:format("~p\n",[JSON]),
+            process()
     end.
+
+decode(InputSrt) ->
+    SubS = string:substr(InputSrt,1,string:len(InputSrt)-1),
+    Data= jsx:decode(list_to_binary(SubS)),
+    proplists:get_value(<<"content">>,Data).
 
 tokenize(Content) ->
     Formated= string:join(lists:map(fun erlang:binary_to_list/1,[Content]),""),
@@ -39,7 +44,6 @@ parse(ExprList) ->
         AST = parseExpr(Tokens),
         lists:append(ParseList,AST)
     end,[],ExprList).
-
 
 parseExpr(Tokens) ->
     {ok, AbsForm} =
@@ -55,18 +59,22 @@ parseExpr(Tokens) ->
     end,
     Result.
 
-tup2list(T) when is_list(T)->
-    tup2list(list_to_tuple(T));
-tup2list(T) ->
-    tup2list(T, tuple_size(T), []).
+%% Format do a conversion of erlang tuples to list, also change strings to binaries
+format(T) when is_list(T)->
+    format(list_to_tuple(T));
+format(T) ->
+    format(T, tuple_size(T), []).
 
-
-tup2list(T, 0, Acc) ->
-    Acc;
-tup2list(T, N, Acc) when is_tuple(element(N,T)) ->
-    tup2list(T, N-1, [tup2list(element(N,T),tuple_size(element(N,T)),[])|Acc]);
-tup2list(T,N,Acc) when is_list(element(N,T)) ->
+format(T, 0, Acc) ->
+    Result = case io_lib:printable_unicode_list(Acc) of
+        true -> list_to_binary(Acc);
+        false -> Acc
+    end,
+    Result;
+format(T, N, Acc) when is_tuple(element(N,T)) ->
+    format(T, N-1, [format(element(N,T),tuple_size(element(N,T)),[])|Acc]);
+format(T,N,Acc) when is_list(element(N,T)) ->
     Tuple = list_to_tuple(element(N,T)),
-    tup2list(T, N-1, [tup2list(Tuple,tuple_size(Tuple),[])|Acc]);
-tup2list(T,N,Acc)->
-    tup2list(T,N-1,[element(N,T)|Acc]).
+    format(T, N-1, [format(Tuple,tuple_size(Tuple),[])|Acc]);
+format(T,N,Acc)->
+    format(T,N-1,[element(N,T)|Acc]).
