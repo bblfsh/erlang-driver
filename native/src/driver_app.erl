@@ -3,36 +3,75 @@
 -behaviour(application).
 
 %% Application callbacks
--export([start/2, stop/1,process/0]).
+-export([start/2, stop/1,loop/0]).
 
 
 
 start(_StartType, _StartArgs) ->
-    process(),
+    loop(),
     driver_sup:start_link().
 
 stop(_State) ->
     ok.
+
+loop()->
+  try
+    process()
+  catch
+    throw:{json,BadJSON} ->
+        Json =jsx:encode([{<<"errors">>,[BadJSON]},{<<"AST">>,[""]}]),
+        io:format("~p\n",[Json]);
+    throw:{parse,BadParse}->
+        {_,_,ErrorAux} = BadParse,
+        ErrStr = list_to_binary(lists:concat(["An error ocurred while parsing: ",lists:concat(ErrorAux)])),
+        Json =jsx:encode([{<<"errors">>,[ErrStr]},{<<"AST">>,[""]}]),
+        io:format("~p\n",[Json]);
+    throw:_ ->
+        Json =jsx:encode([{<<"errors">>,[<<"Unexpected error">>]},{<<"AST">>,[""]}]),
+        io:format("~p\n",[Json])
+  end,
+  loop().
 
 process() ->
     case io:get_line("Reading>") of
         eof ->
             ok;
         N ->
-            Content = decode(N),
+            Content = case  decode(N) of
+              {ok,Res} -> Res;
+              {error,BadJSON} ->
+                  throw(BadJSON)
+            end,
             ExprList = tokenize(Content),
-            ParseList = parse(ExprList),
-            FormatParse = format(ParseList),
+
+            ParseList = case parse(ExprList) of
+              {ok,Parse}-> Parse;
+              {error,BadParse}->
+                  throw({parse,BadParse})
+            end,
+            FormatParse = case format(ParseList) of
+              {ok,Format}-> Format;
+              {error,BadFormat}->
+                  throw({format,BadFormat});
+
+              _ -> io:format(<<"Not implemented\n">>)
+            end,
             JSON = jsx:encode([{<<"AST">>,FormatParse}]),
-            io:format("~p\n",[JSON]),
-            process()
+            io:format("~p\n",[JSON])
     end.
 
 decode(InputSrt) ->
     SubS = string:substr(InputSrt,1,string:len(InputSrt)-1),
-    Data= jsx:decode(list_to_binary(SubS)),
-    proplists:get_value(<<"content">>,Data).
-
+    case jsx:is_json(list_to_binary(SubS)) of
+      true->Data= jsx:decode(list_to_binary(SubS)),
+          case proplists:lookup(<<"content">>,Data) of
+              none -> {error,{json,<<"Content propertie don't found in the input JSON">>}};
+              _ -> Content = proplists:get_value(<<"content">>,Data),
+                  {ok,Content}
+          end;
+      false->
+          {error,{json,<<"Input is not a valid JSON">>}}
+      end.
 tokenize(Content) ->
     Formated= string:join(lists:map(fun erlang:binary_to_list/1,[Content]),""),
     string:tokens(Formated,".").
@@ -46,18 +85,14 @@ parse(ExprList) ->
     end,[],ExprList).
 
 parseExpr(Tokens) ->
-    {ok, AbsForm} =
-        try
-            {ok, _} = erl_parse:parse_form(Tokens)
-        catch
-            _:_ ->
-                {ok, _} = erl_parse:parse_exprs(Tokens)
-        end,
-    Result = if
-      is_list(AbsForm) -> AbsForm;
-      true -> [AbsForm]
-    end,
-    Result.
+    case erl_parse:parse_form(Tokens) of
+        {ok,AbsForm} -> {ok,[AbsForm]};
+        {error,_}->
+            case erl_parse:parse_exprs(Tokens) of
+                {ok,AbsForm} -> {ok,AbsForm};
+                {error,BadParse} -> {error,BadParse}
+            end
+    end.
 
 %% Format do a conversion of erlang tuples to list, also change strings to binaries
 format(T) when is_list(T)->
