@@ -15,19 +15,21 @@ stop(_State) ->
     ok.
 
 loop()->
+  StatusFatal = {<<"status">>,<<"fatal">>},
+  EmptyAST = {<<"ast">>,[""]},
   try
     process()
   catch
     throw:{json,BadJSON} ->
-        Json =jsx:encode([{<<"errors">>,[BadJSON]},{<<"AST">>,[""]}]),
+        Json =jsx:encode([StatusFatal,{<<"errors">>,[BadJSON]},EmptyAST]),
         io:format("~p\n",[Json]);
     throw:{parse,BadParse}->
         {_,_,ErrorAux} = BadParse,
         ErrStr = list_to_binary(lists:concat(["An error ocurred while parsing: ",lists:concat(ErrorAux)])),
-        Json =jsx:encode([{<<"errors">>,[ErrStr]},{<<"AST">>,[""]}]),
+        Json =jsx:encode([StatusFatal,{<<"errors">>,[ErrStr]},EmptyAST]),
         io:format("~p\n",[Json]);
     throw:_ ->
-        Json =jsx:encode([{<<"errors">>,[<<"Unexpected error">>]},{<<"AST">>,[""]}]),
+        Json =jsx:encode([StatusFatal,{<<"errors">>,[<<"Unexpected error">>]},EmptyAST]),
         io:format("~p\n",[Json])
   end,
   loop().
@@ -43,10 +45,9 @@ process() ->
                   throw(BadJSON)
             end,
             ExprList = tokenize(Content),
-
             ParseList = parse(ExprList),
             FormatParse = format(ParseList),
-            JSON = jsx:encode([{<<"AST">>,FormatParse}]),
+            JSON = jsx:encode([{<<"status">>,<<"ok">>},{<<"ast">>,FormatParse}]),
             io:format("~p\n",[JSON])
     end.
 
