@@ -33,7 +33,7 @@ loop()->
   loop().
 
 process() ->
-    case io:get_line("Reading>") of
+    case io:get_line("") of
         eof ->
             ok;
         N ->
@@ -44,18 +44,8 @@ process() ->
             end,
             ExprList = tokenize(Content),
 
-            ParseList = case parse(ExprList) of
-              {ok,Parse}-> Parse;
-              {error,BadParse}->
-                  throw({parse,BadParse})
-            end,
-            FormatParse = case format(ParseList) of
-              {ok,Format}-> Format;
-              {error,BadFormat}->
-                  throw({format,BadFormat});
-
-              _ -> io:format(<<"Not implemented\n">>)
-            end,
+            ParseList = parse(ExprList),
+            FormatParse = format(ParseList),
             JSON = jsx:encode([{<<"AST">>,FormatParse}]),
             io:format("~p\n",[JSON])
     end.
@@ -65,7 +55,7 @@ decode(InputSrt) ->
     case jsx:is_json(list_to_binary(SubS)) of
       true->Data= jsx:decode(list_to_binary(SubS)),
           case proplists:lookup(<<"content">>,Data) of
-              none -> {error,{json,<<"Content propertie don't found in the input JSON">>}};
+              none -> {error,{json,<<"Content propertie don't found in JSON input">>}};
               _ -> Content = proplists:get_value(<<"content">>,Data),
                   {ok,Content}
           end;
@@ -77,12 +67,15 @@ tokenize(Content) ->
     string:tokens(Formated,".").
 
 parse(ExprList) ->
-    lists:foldl(fun (Expr,ParseList)->
+    List = lists:foldl(fun (Expr,ParseList)->
         ExprDot = string:concat(Expr,"."),
         {ok, Tokens, _} = erl_scan:string(ExprDot),
-        AST = parseExpr(Tokens),
-        lists:append(ParseList,AST)
-    end,[],ExprList).
+        case parseExpr(Tokens) of
+          {ok,AST} -> lists:append(ParseList,AST);
+          {error,BadParse} -> throw({parse,BadParse})
+        end
+    end,[],ExprList),
+    {ok,List}.
 
 parseExpr(Tokens) ->
     case erl_parse:parse_form(Tokens) of
