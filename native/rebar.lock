@@ -1,0 +1,10 @@
+{"1.1.0",
+[{<<"aleppo">>,{pkg,<<"aleppo">>,<<"0.9.0">>},0},
+ {<<"forms">>,{pkg,<<"forms">>,<<"0.0.1">>},0},
+ {<<"jsx">>,{pkg,<<"jsx">>,<<"2.8.2">>},0}]}.
+[
+{pkg_hash,[
+ {<<"aleppo">>, <<"43B4EC269FA136E39DCECBD4323D4346E0EF069A62528A9154F1BB3ACD26E3E4">>},
+ {<<"forms">>, <<"45F3B10B6F859F95F2C2C1A1DE244D63855296D55ED8E93EB0DD116B3E86C4A6">>},
+ {<<"jsx">>, <<"7ACC7D785B5ABE8A6E9ADBDE926A24E481F29956DD8B4DF49E3E4E7BCC92A018">>}]}
+].
