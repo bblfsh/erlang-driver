@@ -22,15 +22,16 @@ loop()->
   catch
     throw:{json,BadJSON} ->
         Json =jsx:encode([StatusFatal,{<<"errors">>,[BadJSON]},EmptyAST]),
-        io:format("~p\n",[Json]);
+        io:format("~p\n",[binary_to_list(Json)]);
     throw:{parse,BadParse}->
         {_,_,ErrorAux} = BadParse,
         ErrStr = list_to_binary(lists:concat(["An error ocurred while parsing: ",lists:concat(ErrorAux)])),
+
         Json =jsx:encode([StatusFatal,{<<"errors">>,[ErrStr]},EmptyAST]),
-        io:format("~p\n",[Json]);
+        io:format("~p\n",[binary_to_list(Json)]);
     throw:_ ->
         Json =jsx:encode([StatusFatal,{<<"errors">>,[<<"Unexpected error">>]},EmptyAST]),
-        io:format("~p\n",[Json])
+        io:format("~p\n",[binary_to_list(Json)])
   end,
   loop().
 
@@ -45,10 +46,12 @@ process() ->
                   throw(BadJSON)
             end,
             ExprList = tokenize(Content),
-            ParseList = parse(ExprList),
+            {ok,ParseList} = parse(ExprList),
+            io:format("~p\n",[ParseList]),
+            io:write("\n"),
             FormatParse = format(ParseList),
             JSON = jsx:encode([{<<"status">>,<<"ok">>},{<<"ast">>,FormatParse}]),
-            io:format("~p\n",[JSON])
+            io:format("~p\n",[binary_to_list(JSON)])
     end.
 
 decode(InputSrt) ->
