@@ -135,10 +135,16 @@ parseExpr_test_()->
   {Status3,_} = parseExpr(Tokens3),
   {_,Tokens4,_} = erl_scan:string("io:format(\"blah~n\")."),
   {Status4,_} = parseExpr(Tokens4),
+  {_,Tokens5,_} = erl_scan:string("3+5-2."),
+  {Status5,_} = parseExpr(Tokens5),
+  {_,Tokens6,_} = erl_scan:string("?MODULE."),
+  {Status6,_} = parseExpr(Tokens6),
   [?_assertEqual(error,Status),
   ?_assertEqual(ok,Status2),
   ?_assertEqual(error,Status3),
-  ?_assertEqual(ok,Status4)].
+  ?_assertEqual(ok,Status4),
+  ?_assertEqual(ok,Status5),
+  ?_assertEqual(error,Status6)].
 
 format_test_()->
    [?_assert(format({a,b,c,{d,e}}) =:= [a,b,c,[d,e]]),
@@ -147,4 +153,5 @@ format_test_()->
    ?_assert(format({a,b,c,[d,e]}) =:= [a,b,c,[d,e]]),
    ?_assert(format({{a},{b},[c],[d],{{f}}}) =:= [[a],[b],[c],[d],[[f]]]),
    ?_assert(format({"hello","world"})=:= [<<"hello">>,<<"world">>]),
-   ?_assert(format({a,b,[c,"hello",{"world",["this","is","a","test"]}]})=:= [a,b,[c,<<"hello">>,[<<"world">>,[<<"this">>,<<"is">>,<<"a">>,<<"test">>]]]])].
+   ?_assert(format({a,b,[c,"hello",{"world",["this","is","a","test"]}]})=:= [a,b,[c,<<"hello">>,[<<"world">>,[<<"this">>,<<"is">>,<<"a">>,<<"test">>]]]]),
+   ?_assert(format({"hello",<<"world">>})=:= [<<"hello">>,<<"world">>])].
