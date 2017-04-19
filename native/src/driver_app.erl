@@ -9,9 +9,14 @@
 
 
 start(_StartType, _StartArgs) ->
-    loop(),
-    driver_sup:start_link().
-
+    try
+      %If you are modifying the code comment the next line to show the exceptions
+      %error_logger:tty(false),
+      loop()
+    catch
+      throw:{eofErr,_}->
+        exit(normal)
+    end.
 stop(_State) ->
     ok.
 
@@ -23,23 +28,26 @@ loop()->
   catch
     throw:{json,BadJSON} ->
         Json =jsx:encode([StatusFatal,{<<"errors">>,[BadJSON]},EmptyAST]),
-        io:format("~p\n",[binary_to_list(Json)]);
+        io:format("~s~n",[binary_to_list(Json)]);
     throw:{parse,BadParse}->
         {_,_,ErrorAux} = BadParse,
         ErrStr = list_to_binary(lists:concat(["An error ocurred while parsing: ",lists:concat(ErrorAux)])),
 
         Json =jsx:encode([StatusFatal,{<<"errors">>,[ErrStr]},EmptyAST]),
-        io:format("~p\n",[binary_to_list(Json)]);
+        io:format("~s~n",[binary_to_list(Json)]);
+    throw:{eofErr,EOF} ->
+        throw({eofErr,EOF});
     throw:_ ->
         Json =jsx:encode([StatusFatal,{<<"errors">>,[<<"Unexpected error">>]},EmptyAST]),
-        io:format("~p\n",[binary_to_list(Json)])
+        io:format("~s~n",[binary_to_list(Json)])
   end,
   loop().
 
 process() ->
     case io:get_line("") of
         eof ->
-            ok;
+            EOF = {eofErr,<<"End of the file">>},
+            throw(EOF);
         N ->
             Content = case  decode(N) of
               {ok,Res} -> Res;
@@ -50,7 +58,7 @@ process() ->
             {ok,ParseList} = parse(ExprList),
             FormatParse = format(ParseList),
             JSON = jsx:encode([{<<"status">>,<<"ok">>},{<<"ast">>,FormatParse}]),
-            io:format("~p\n",[binary_to_list(JSON)])
+            io:format("~s~n",[binary_to_list(JSON)])
     end.
 
 decode(InputSrt) ->
@@ -71,11 +79,16 @@ tokenize(Content) ->
 
 parse(ExprList) ->
     List = lists:foldl(fun (Expr,ParseList)->
-        ExprDot = string:concat(Expr,"."),
-        {ok, Tokens, _} = erl_scan:string(ExprDot),
-        case parseExpr(Tokens) of
-          {ok,AST} -> lists:append(ParseList,AST);
-          {error,BadParse} -> throw({parse,BadParse})
+        case string:equal("\n",Expr) of
+          true ->
+            lists:append(ParseList,"");
+          false ->
+            ExprDot = string:concat(Expr,"."),
+            {ok, Tokens, _} = erl_scan:string(ExprDot),
+            case parseExpr(Tokens) of
+              {ok,AST} -> lists:append(ParseList,AST);
+              {error,BadParse} -> throw({parse,BadParse})
+            end
         end
     end,[],ExprList),
     {ok,List}.
@@ -96,7 +109,7 @@ format(T) when is_list(T)->
 format(T) ->
     format(T, tuple_size(T), []).
 
-format(T, 0, Acc) ->
+format(_, 0, Acc) ->
     Result = case io_lib:printable_unicode_list(Acc) of
         true -> list_to_binary(Acc);
         false -> Acc
