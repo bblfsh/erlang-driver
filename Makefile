@@ -7,13 +7,14 @@ RELEASE="pre-alpha"
 
 test-native-internal:
 	cd native; \
-	rebar3 eunit
+	rebar3 eunit;
+	if [ -d .cache ]; then rm -r .cache; fi;
 
 build-native-internal:
 
-	if [ -d "build" ]; then rm -r build; fi;
+	if [ -d build ]; then rm -r build; fi;
 	cd native; \
-	if [ -d "_build"]; then rm -r _build; fi;\
+	if [ -d _build ]; then rm -r _build; fi;\
   rebar3 release; \
 	awk '{gsub("-noinput","");print}' $(DIR)/$(RELEASE)/bin/$(RELEASE) > $(DIR)/$(RELEASE)/bin/tmp;\
 	cat $(DIR)/$(RELEASE)/bin/tmp > $(DIR)/$(RELEASE)/bin/$(RELEASE); \
@@ -21,4 +22,4 @@ build-native-internal:
 	cp -r _build $(BUILD_PATH); \
   cp native.sh $(BUILD_PATH)/native; \
 	chmod +x $(BUILD_PATH)/native;
-	rm  -r .cache
+	if [ -d .cache ]; then rm -r .cache; fi;

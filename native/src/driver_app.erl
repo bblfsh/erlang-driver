@@ -3,7 +3,8 @@
 -behaviour(application).
 
 %% Application callbacks
--export([start/2, stop/1,loop/0]).
+-export([start/2, stop/1,loop/0,parseExpr/1]).
+-include_lib("eunit/include/eunit.hrl").
 
 
 
@@ -47,8 +48,6 @@ process() ->
             end,
             ExprList = tokenize(Content),
             {ok,ParseList} = parse(ExprList),
-            io:format("~p\n",[ParseList]),
-            io:write("\n"),
             FormatParse = format(ParseList),
             JSON = jsx:encode([{<<"status">>,<<"ok">>},{<<"ast">>,FormatParse}]),
             io:format("~p\n",[binary_to_list(JSON)])
@@ -110,3 +109,49 @@ format(T,N,Acc) when is_list(element(N,T)) ->
     format(T, N-1, [format(Tuple,tuple_size(Tuple),[])|Acc]);
 format(T,N,Acc)->
     format(T,N-1,[element(N,T)|Acc]).
+
+
+
+
+
+
+
+%%Tests
+% Test are inside the same file because we need to test private functions
+decode_test_()->
+  {Status,_} = decode("{\"aaa\":\"bbbb\"}"),
+  {Status2,_} = decode("adddkhfdlhfasf"),
+  {Status3,_} = decode("{\"content\": \"hola\"}."),
+  [?_assertEqual(error,Status),
+  ?_assertEqual(error,Status2),
+  ?_assertEqual(ok,Status3)].
+
+parseExpr_test_()->
+  {_,Tokens,_} = erl_scan:string("fun () -> hola."),
+  {Status,_} = parseExpr(Tokens),
+  {_,Tokens2,_} = erl_scan:string("-module(test)."),
+  {Status2,_} = parseExpr(Tokens2),
+  {_,Tokens3,_} = erl_scan:string("3+5-2"),
+  {Status3,_} = parseExpr(Tokens3),
+  {_,Tokens4,_} = erl_scan:string("io:format(\"blah~n\")."),
+  {Status4,_} = parseExpr(Tokens4),
+  {_,Tokens5,_} = erl_scan:string("3+5-2."),
+  {Status5,_} = parseExpr(Tokens5),
+  {_,Tokens6,_} = erl_scan:string("?MODULE."),
+  {Status6,_} = parseExpr(Tokens6),
+  [?_assertEqual(error,Status),
+  ?_assertEqual(ok,Status2),
+  ?_assertEqual(error,Status3),
+  ?_assertEqual(ok,Status4),
+  ?_assertEqual(ok,Status5),
+  ?_assertEqual(error,Status6)].
+
+format_test_()->
+   [?_assert(format({a,b,c,{d,e}}) =:= [a,b,c,[d,e]]),
+   ?_assert(format([a,b,c,{d,e}]) =:= [a,b,c,[d,e]]),
+   ?_assert(format({{a,b,c},d,e}) =:= [[a,b,c],d,e]),
+   ?_assert(format({a,b,c,[d,e]}) =:= [a,b,c,[d,e]]),
+   ?_assert(format({{a},{b},[c],[d],{{f}}}) =:= [[a],[b],[c],[d],[[f]]]),
+   ?_assert(format({"hello","world"})=:= [<<"hello">>,<<"world">>]),
+   ?_assert(format({a,b,[c,"hello",{"world",["this","is","a","test"]}]})=:= [a,b,[c,<<"hello">>,[<<"world">>,[<<"this">>,<<"is">>,<<"a">>,<<"test">>]]]]),
+   ?_assert(format({"hello",<<"world">>})=:= [<<"hello">>,<<"world">>])].

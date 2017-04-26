@@ -6,7 +6,6 @@
   {applications,
    [kernel,
     stdlib,
-    forms,
     jsx
    ]},
   {env,[]},
