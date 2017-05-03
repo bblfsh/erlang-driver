@@ -1,0 +1,43 @@
+{
+    "status": "ok",
+    "errors": null,
+    "ast": [
+        [
+            "call",
+            1,
+            [
+                "remote",
+                1,
+                [
+                    "atom",
+                    1,
+                    "io"
+                ],
+                [
+                    "atom",
+                    1,
+                    "write"
+                ]
+            ],
+            [
+                [
+                    "bin",
+                    1,
+                    [
+                        [
+                            "bin_element",
+                            1,
+                            [
+                                "string",
+                                1,
+                                "Hello World"
+                            ],
+                            "default",
+                            "default"
+                        ]
+                    ]
+                ]
+            ]
+        ]
+    ]
+}

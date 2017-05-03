@@ -1,0 +1,7 @@
+{
+    "status": "fatal",
+    "errors": [
+        "An error ocurred while parsing: syntax error before: '.'"
+    ],
+    "uast": null
+}
