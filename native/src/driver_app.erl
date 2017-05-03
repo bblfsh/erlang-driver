@@ -3,7 +3,7 @@
 -behaviour(application).
 
 %% Application callbacks
--export([start/2, stop/1,loop/0,parseExpr/1]).
+-export([start/2, stop/1,loop/0,parseExpr/1,tokenize/1,parse/1,format/1]).
 -include_lib("eunit/include/eunit.hrl").
 
 
@@ -29,9 +29,15 @@ loop()->
     throw:{json,BadJSON} ->
         Json =jsx:encode([StatusFatal,{<<"errors">>,[BadJSON]},EmptyAST]),
         io:format("~s~n",[binary_to_list(Json)]);
-    throw:{parse,BadParse}->
+    throw:{parse,BadParse} ->
         {_,_,ErrorAux} = BadParse,
         ErrStr = list_to_binary(lists:concat(["An error ocurred while parsing: ",lists:concat(ErrorAux)])),
+
+        Json =jsx:encode([StatusFatal,{<<"errors">>,[ErrStr]},EmptyAST]),
+        io:format("~s~n",[binary_to_list(Json)]);
+    throw:{scan,BadScan} ->
+        {_,_,ErrorAux} = BadScan,
+        ErrStr = list_to_binary(lists:concat(["An error ocurred while scanning tokens: ",lists:concat(tuple_to_list(ErrorAux))])),
 
         Json =jsx:encode([StatusFatal,{<<"errors">>,[ErrStr]},EmptyAST]),
         io:format("~s~n",[binary_to_list(Json)]);
@@ -62,6 +68,7 @@ process() ->
     end.
 
 decode(InputSrt) ->
+
     SubS = string:substr(InputSrt,1,string:len(InputSrt)-1),
     case jsx:is_json(list_to_binary(SubS)) of
       true->Data= jsx:decode(list_to_binary(SubS)),
@@ -84,10 +91,13 @@ parse(ExprList) ->
             lists:append(ParseList,"");
           false ->
             ExprDot = string:concat(Expr,"."),
-            {ok, Tokens, _} = erl_scan:string(ExprDot),
-            case parseExpr(Tokens) of
-              {ok,AST} -> lists:append(ParseList,AST);
-              {error,BadParse} -> throw({parse,BadParse})
+            case erl_scan:string(ExprDot) of
+              {ok,Tokens,_} ->
+                  case parseExpr(Tokens) of
+                    {ok,AST} -> lists:append(ParseList,AST);
+                    {error,BadParse} -> throw({parse,BadParse})
+                  end;
+              {error,BadScan,_}-> throw({scan,BadScan})
             end
         end
     end,[],ExprList),
@@ -125,39 +135,35 @@ format(T,N,Acc)->
 
 
 
-
-
-
-
 %%Tests
 % Test are inside the same file because we need to test private functions
 decode_test_()->
-  {Status,_} = decode("{\"aaa\":\"bbbb\"}"),
-  {Status2,_} = decode("adddkhfdlhfasf"),
-  {Status3,_} = decode("{\"content\": \"hola\"}."),
-  [?_assertEqual(error,Status),
-  ?_assertEqual(error,Status2),
-  ?_assertEqual(ok,Status3)].
+    {Status,_} = decode("{\"aaa\":\"bbbb\"}"),
+    {Status2,_} = decode("adddkhfdlhfasf"),
+    {Status3,_} = decode("{\"content\": \"hola\"}."),
+    [?_assertEqual(error,Status),
+    ?_assertEqual(error,Status2),
+    ?_assertEqual(ok,Status3)].
 
 parseExpr_test_()->
-  {_,Tokens,_} = erl_scan:string("fun () -> hola."),
-  {Status,_} = parseExpr(Tokens),
-  {_,Tokens2,_} = erl_scan:string("-module(test)."),
-  {Status2,_} = parseExpr(Tokens2),
-  {_,Tokens3,_} = erl_scan:string("3+5-2"),
-  {Status3,_} = parseExpr(Tokens3),
-  {_,Tokens4,_} = erl_scan:string("io:format(\"blah~n\")."),
-  {Status4,_} = parseExpr(Tokens4),
-  {_,Tokens5,_} = erl_scan:string("3+5-2."),
-  {Status5,_} = parseExpr(Tokens5),
-  {_,Tokens6,_} = erl_scan:string("?MODULE."),
-  {Status6,_} = parseExpr(Tokens6),
-  [?_assertEqual(error,Status),
-  ?_assertEqual(ok,Status2),
-  ?_assertEqual(error,Status3),
-  ?_assertEqual(ok,Status4),
-  ?_assertEqual(ok,Status5),
-  ?_assertEqual(error,Status6)].
+    {_,Tokens,_} = erl_scan:string("fun () -> hola."),
+    {Status,_} = parseExpr(Tokens),
+    {_,Tokens2,_} = erl_scan:string("-module(test)."),
+    {Status2,_} = parseExpr(Tokens2),
+    {_,Tokens3,_} = erl_scan:string("3+5-2"),
+    {Status3,_} = parseExpr(Tokens3),
+    {_,Tokens4,_} = erl_scan:string("io:format(\"blah~n\")."),
+    {Status4,_} = parseExpr(Tokens4),
+    {_,Tokens5,_} = erl_scan:string("3+5-2."),
+    {Status5,_} = parseExpr(Tokens5),
+    {_,Tokens6,_} = erl_scan:string("?MODULE."),
+    {Status6,_} = parseExpr(Tokens6),
+    [?_assertEqual(error,Status),
+    ?_assertEqual(ok,Status2),
+    ?_assertEqual(error,Status3),
+    ?_assertEqual(ok,Status4),
+    ?_assertEqual(ok,Status5),
+    ?_assertEqual(error,Status6)].
 
 format_test_()->
    [?_assert(format({a,b,c,{d,e}}) =:= [a,b,c,[d,e]]),
