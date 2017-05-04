@@ -1,6 +1,4 @@
 {
-    "status": "ok",
-    "errors": null,
     "ast": [
         [
             "call",
@@ -27,5 +25,7 @@
                 ]
             ]
         ]
-    ]
+    ],
+    "errors": null,
+    "status": "ok"
 }
