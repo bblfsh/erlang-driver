@@ -12,13 +12,16 @@ test-native-internal:
 
 build-native-internal:
 
-	if [ -d build ]; then rm -r build; fi;
+	rm -rf build; \
 	cd native; \
-	if [ -d _build ]; then rm -r _build; fi;\
-  rebar3 release; \
+	rm -rf _build; \
+	rebar3 release; \
 	awk '{gsub("-noinput","");print}' $(DIR)/$(RELEASE)/bin/$(RELEASE) > $(DIR)/$(RELEASE)/bin/tmp;\
 	cat $(DIR)/$(RELEASE)/bin/tmp > $(DIR)/$(RELEASE)/bin/$(RELEASE); \
   rm $(DIR)/$(RELEASE)/bin/tmp; \
+	sed -i '/echo "Exec:/ d' $(DIR)/$(RELEASE)/bin/$(RELEASE) && \
+	sed -i '/echo "Root:/ d' $(DIR)/$(RELEASE)/bin/$(RELEASE) && \
+	sed -i '547 d' $(DIR)/$(RELEASE)/bin/$(RELEASE) && \
 	cp -r _build $(BUILD_PATH); \
   cp native.sh $(BUILD_PATH)/native; \
 	chmod +x $(BUILD_PATH)/native;
